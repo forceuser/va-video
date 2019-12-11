@@ -1,0 +1,85 @@
+{
+	"name": "va-video",
+	"version": "0.0.0",
+	"description": "va-video description",
+	"license": "MIT",
+	"main": "dist/js/va-video.js",
+	"module": "src/app/index.mjs",
+	"engines": {
+		"node": ">=10.11.0"
+	},
+	"_moduleAliases": {
+		"va-video": "./src/app/index.mjs"
+	},
+	"scripts": {
+		"init": "rm -rf node_modules > /dev/null && npm i",
+		"update": "npx npm-check-updates -u && npm install && npm update --dev && npm audit fix",
+		"start": "run-s start:*",
+		"start:0": "",
+		"build": "run-s build:*",
+		"build:0": "",
+		"test": "eslint . && run-p test:*",
+		"fix": "eslint --fix .",
+		"bump": "npm version patch --no-git-tag-version",
+		"release": "npm run release-nobump",
+		"release-nobump": "npm test && npm run build && npm run documentation && va-release",
+		"release-patch": "npm test && npm run build && npm run documentation && va-release --version patch",
+		"release-minor": "npm test && npm run build && npm run documentation && va-release --version minor",
+		"release-major": "npm test && npm run build && npm run documentation && va-release --version major",
+		"test:0": "",
+		"documentation": "",
+		"build-templates": "va-release -t"
+	},
+	"va-release": {
+		"assets": "dist/**/*",
+		"files": [
+			{
+				"cwd": "templates/",
+				"src": [
+					"**/*"
+				],
+				"dest": "./"
+			}
+		],
+		"library": "vaVideo"
+	},
+	"keywords": [],
+	"dependencies": {
+		"colors": "^1.4.0",
+		"sqnc": "^3.0.3"
+	},
+	"devDependencies": {
+		"babel-eslint": ">=10.0.1",
+		"copyfiles": "^2.1.1",
+		"cross-env": "^5.2.0",
+		"deepmerge": "^3.2.0",
+		"eslint": ">=5.16.0",
+		"esm": "^3.2.22",
+		"faucet": "0.0.1",
+		"find-free-port": "^2.0.0",
+		"fs-extra": "^7.0.1",
+		"globby": "^9.2.0",
+		"minimatch": "^3.0.4",
+		"module-alias": "^2.2.0",
+		"npm-run-all": "^4.1.3",
+		"open": "^6.4.0",
+		"shelljs": "^0.8.3",
+		"sinon": "^7.3.2",
+		"ssri": "^6.0.1",
+		"sync-directory": "^2.0.8",
+		"tape": "^4.10.1",
+		"universal-url": "^2.0.0",
+		"va-release": "^1.1.14"
+	},
+	"bin": {
+		"va-video": "./src/app/cli.mjs"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/forceuser/va-video.git"
+	},
+	"bugs": {
+		"url": "https://github.com/forceuser/va-video/issues"
+	},
+	"homepage": "https://github.com/forceuser/va-video#readme"
+}
