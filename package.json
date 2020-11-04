@@ -1,6 +1,6 @@
 {
 	"name": "va-video",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "va-video description",
 	"license": "MIT",
 	"main": "dist/js/va-video.js",
@@ -51,7 +51,8 @@
 		"sinon": "^7.3.2",
 		"ssri": "^6.0.1",
 		"universal-url": "^2.0.0",
-		"globby": "^9.2.0"
+		"globby": "^9.2.0",
+		"fs-extra": "^7.0.1"
 	},
 	"devDependencies": {
 		"babel-eslint": ">=10.0.1",
@@ -62,7 +63,6 @@
 		"esm": "^3.2.22",
 		"faucet": "0.0.1",
 		"find-free-port": "^2.0.0",
-		"fs-extra": "^7.0.1",
 		"minimatch": "^3.0.4",
 		"module-alias": "^2.2.0",
 		"npm-run-all": "^4.1.3",
