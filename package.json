@@ -1,6 +1,6 @@
 {
 	"name": "va-video",
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"description": "va-video description",
 	"license": "MIT",
 	"main": "dist/js/va-video.js",
