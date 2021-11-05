@@ -3,9 +3,7 @@ import process from "process";
 import path from "path";
 import ssri from "ssri";
 import globby from "globby";
-import shell from "shelljs";
-import colors from "colors";
-import sqnc from "sqnc";
+import "colors";
 import {getPackageDir, exec, getArg} from "./common.mjs";
 
 const cwd = process.cwd();
@@ -24,6 +22,8 @@ async function main () {
 		const settings = {
 			fromTime: getArg(["from"]),
 			toTime: getArg(["to"]),
+			trimFromTime: getArg(["trim-from"]),
+			trimToTime: getArg(["trim-to"]),
 			video: getArg(["v"]),
 			image: getArg(["img"]),
 			imageFrames: getArg(["fr"]),
@@ -45,8 +45,8 @@ async function main () {
 			// imageFrames: sqnc(0, 100, 25).toArray(),
 			video: settings.video ? settings.video.split(",") : [
 				// "av1:webm:ogg",
-				"vp9:webm:ogg",
-				"h264:mp4:aac",
+				"vp9:webm:ogg:22",
+				"h264:mp4:aac:15",
 			],
 			// audio: [],
 		};
@@ -106,10 +106,28 @@ async function main () {
 					**/
 					size = +size;
 					console.log(`Converting to ${codec.toUpperCase().bold}:${videoFormat.toUpperCase().bold} video (size: ${size}, compression: ${compression})`.bgBlue.white);
-					await exec(`ffmpeg -i ${fullpath} -c:v libvpx-vp9 -crf ${compression} -b:v 0 ${size > 0 ? `-vf "scale=w=${size}:h=${size}:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2"` : ""} -an -y ${createDurationParams()} ${outputFileName}-video[${size}-${compression}].${codec}.${videoFormat}`, {silent: true});
+
+					const filters = [];
+					const final = "result";
+
+					if (size) {
+						filters.push(`[0:v]scale=w=${size}:h=${size}:force_original_aspect_ratio=decrease[x];[x]scale=trunc(iw/2)*2:trunc(ih/2)*2[result]`);
+					}
+					// filters.push(`[scaled]split[scaled1][scaled2]`);
+					// filters.push(`[scaled1]trim=start=0.0:end=24.0,setpts=PTS-STARTPTS[1v]`);
+					// filters.push(`[scaled2]trim=start=28.0:end=41,setpts=PTS-STARTPTS[2v]`);
+					// filters.push(`[1v][2v]concat[y]`);
+					// filters.push("[y][1:v]overlay[ov]");
+					// filters.push(`[ov]fade=type=out:start_time=36.5:duration=5.5[result]`);
+					let audioFilterStr;
+					// audioFilterStr = `afade=type=out:start_time=36.5:duration=5.5`;
+					const filtersStr = filters.map((filter, idx) => `${filter}${idx < filters.length - 1 ? ";" : ""}`).join("").trim();
+					const cmd = `ffmpeg -i ${fullpath} -f lavfi -i nullsrc=s=1x1:d=42 -c:v libvpx-vp9 -crf ${compression} -b:v 0 -filter_complex '${filtersStr}' -map '[${final}]' -an -y ${createDurationParams()} ${outputFileName}-video[${size}-${compression}].${codec}.${videoFormat}`;
+
+					await exec(cmd, {silent: true});
 					console.log(`Created video file (without audio)`, `${outputFileNameRelative}-video[${size}-${compression}].${codec}.${videoFormat}`.cyan);
 					console.log([...(audioFormat ? [`Appending ${audioFormat.toUpperCase()} audio to video`] : []), `Optimizimg for web`].join(" + ").red);
-					await exec(`ffmpeg -i ${outputFileName}-video[${size}-${compression}].${codec}.${videoFormat} ${audioFormat ? `-i ${outputFileName}-audio.${audioFormat}` : "-an"} -shortest -movflags +faststart -map_metadata -1 -write_tmcd 0  -c:v copy -c:a copy -y ${outputFileName}[${size}-${compression}].${codec}${audioFormat ? `-${audioFormat}` : ""}.${videoFormat}`, {silent: true});
+					await exec(`ffmpeg -i ${outputFileName}-video[${size}-${compression}].${codec}.${videoFormat} ${audioFormat ? `-i ${outputFileName}-audio.${audioFormat}` : "-an"} -shortest -movflags +faststart -map_metadata -1 -write_tmcd 0  -c:v copy ${audioFormat && audioFilterStr ? `-af "${audioFilterStr}"` : `-c:a copy`} -y ${outputFileName}[${size}-${compression}].${codec}${audioFormat ? `-${audioFormat}` : ""}.${videoFormat}`, {silent: true});
 					console.log(`Created video file`, `${outputFileNameRelative}[${size}-${compression}].${codec}${audioFormat ? `-${audioFormat}` : ""}.${videoFormat}`.cyan);
 				},
 				"h264": async (codec, videoFormat = "mp4", audioFormat, compression = 26, size = 1280) => {
@@ -121,10 +139,29 @@ async function main () {
 					**/
 					size = +size;
 					console.log(`Converting to ${codec.toUpperCase().bold}:${videoFormat.toUpperCase().bold} video (size: ${size}, compression: ${compression})`.bgBlue.white);
-					await exec(`ffmpeg -i ${fullpath} -threads 8 -c:v libx264 -crf ${compression} -maxrate 20M -bufsize 25M -preset veryslow -tune fastdecode -profile:v main -level 4.0 -color_primaries bt709 -color_trc bt709 -colorspace bt709 ${size > 0 ? `-vf "scale=w=${size}:h=${size}:force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2"` : ""} -an -y ${createDurationParams()} ${outputFileName}-video[${size}-${compression}].${codec}.${videoFormat}`, {silent: true});
+
+					const filters = [];
+					const final = "result";
+
+					if (size) {
+						filters.push(`[0:v]scale=w=${size}:h=${size}:force_original_aspect_ratio=decrease[x];[x]scale=trunc(iw/2)*2:trunc(ih/2)*2[result]`);
+					}
+					// filters.push(`[scaled]split[scaled1][scaled2]`);
+					// filters.push(`[scaled1]trim=start=0.0:end=24.0,setpts=PTS-STARTPTS[1v]`);
+					// filters.push(`[scaled2]trim=start=28.0:end=41,setpts=PTS-STARTPTS[2v]`);
+					// filters.push(`[1v][2v]concat[y]`);
+					// filters.push("[y][1:v]overlay[ov]");
+					// filters.push(`[ov]fade=type=out:start_time=36.5:duration=5.5[result]`);
+
+					let audioFilterStr;
+					// audioFilterStr = `afade=type=out:start_time=36.5:duration=5.5`;
+					const filtersStr = filters.map((filter, idx) => `${filter}${idx < filters.length - 1 ? ";" : ""}`).join("").trim();
+					const cmd = `ffmpeg -i ${fullpath} -f lavfi -i nullsrc=s=1x1:d=42 -threads 8 -c:v libx264 -crf ${compression} -maxrate 20M -bufsize 25M -preset veryslow -tune fastdecode -profile:v main -level 4.0 -color_primaries bt709 -color_trc bt709 -colorspace bt709 -an -y ${createDurationParams()} -filter_complex '${filtersStr}' -map '[${final}]' ${outputFileName}-video[${size}-${compression}].${codec}.${videoFormat}`;
+					// console.log(cmd);
+					await exec(cmd, {silent: true});
 					console.log(`Created video file (without audio)`, `${outputFileNameRelative}-video[${size}-${compression}].${codec}.${videoFormat}`.cyan);
 					console.log([...(audioFormat ? [`Appending ${audioFormat.toUpperCase()} audio to video`] : []), `Optimizimg for web`].join(" + ").red);
-					await exec(`ffmpeg -i ${outputFileName}-video[${size}-${compression}].${codec}.${videoFormat} ${audioFormat ? `-i ${outputFileName}-audio.${audioFormat}` : "-an"} -shortest -movflags +faststart -map_metadata -1 -write_tmcd 0  -c:v copy -c:a copy -y ${outputFileName}[${size}-${compression}].${codec}${audioFormat ? `-${audioFormat}` : ""}.${videoFormat}`, {silent: true});
+					await exec(`ffmpeg -i ${outputFileName}-video[${size}-${compression}].${codec}.${videoFormat} ${audioFormat ? `-i ${outputFileName}-audio.${audioFormat}` : "-an"} ${audioFormat && audioFilterStr ? `-af "${audioFilterStr}"` : `-c:a copy`} -shortest -movflags +faststart -map_metadata -1 -write_tmcd 0  -c:v copy -y ${outputFileName}[${size}-${compression}].${codec}${audioFormat ? `-${audioFormat}` : ""}.${videoFormat}`, {silent: true});
 					console.log(`Created video file`, `${outputFileNameRelative}[${size}-${compression}].${codec}${audioFormat ? `-${audioFormat}` : ""}.${videoFormat}`.cyan);
 				},
 				"av1": async (codec, videoFormat, audioFormat) => {

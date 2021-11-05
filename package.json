@@ -46,13 +46,13 @@
 	"keywords": [],
 	"dependencies": {
 		"colors": "^1.4.0",
-		"sqnc": "^3.0.3",
+		"fs-extra": "^7.0.1",
+		"globby": "^9.2.0",
 		"shelljs": "^0.8.3",
 		"sinon": "^7.3.2",
+		"sqnc": "^3.0.3",
 		"ssri": "^6.0.1",
-		"universal-url": "^2.0.0",
-		"globby": "^9.2.0",
-		"fs-extra": "^7.0.1"
+		"universal-url": "^2.0.0"
 	},
 	"devDependencies": {
 		"babel-eslint": ">=10.0.1",
